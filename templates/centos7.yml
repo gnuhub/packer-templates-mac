@@ -1,8 +1,8 @@
 ---
-description: Mac infra template for Linux VMs using Xenial
+description: Mac infra template for Linux VMs using CentOS 7
 variables:
-  vm_name: travis-ci-ubuntu16.04-internal-vanilla-{{ timestamp }}
-  records_path: records/ubuntu16.04
+  vm_name: travis-ci-centos7-internal-vanilla-{{ timestamp }}
+  records_path: records/centos7
 
   ssh_password: "{{ env `TRAVIS_PACKER_SSH_PASSWORD` }}"
   vcenter_server: "{{ env `VCENTER_SERVER` }}"
@@ -12,7 +12,7 @@ variables:
 builders:
 - type: vsphere-iso
   name: vsphere
-  ssh_timeout: 10m
+  ssh_timeout: 5m
   ssh_port: 22
   ssh_username: travis
   ssh_password: "{{ user `ssh_password` }}"
@@ -22,6 +22,7 @@ builders:
   insecure_connection: "{{ user `vcenter_insecure` }}"
   datacenter: "pod-1"
   cluster: MacPro_Pod_1
+  host: 10.88.242.100
   datastore: "DataCore1_1"
   folder: "Vanilla VMs"
   vm_name: "{{ user `vm_name` }}"
@@ -32,7 +33,7 @@ builders:
   RAM_reservation: 0
   disk_size: 32768
   disk_controller_type: pvscsi
-  guest_os_type: other3xLinux64Guest
+  guest_os_type: centos7_64Guest
   shutdown_timeout: 5m
   shutdown_command: sudo poweroff
   create_snapshot: true
@@ -40,42 +41,22 @@ builders:
   network_card: vmxnet3
   network: Internal
   iso_paths:
-  - "[DataCore1_1] ubuntu-16.04.4-server-amd64.iso"
+  - "[ISO (1)] CENTOS/CentOS-7-x86_64-DVD-1708.iso"
   floppy_files:
-  - assets/ubuntu-preseed.cfg
+  - assets/centos-ks.cfg
   boot_command:
-  - "<enter><wait><f6><wait><esc><wait>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>"
-  - "<bs><bs><bs>"
-  - "/install/vmlinuz "
-  - "initrd=/install/initrd.gz "
-  - "priority=critical "
-  - "locale=en_US "
-  - "preseed/file=/media/ubuntu-preseed.cfg "
-  - "<enter>"
+  - "<tab> text ks=hd:fd0:/centos-ks.cfg<enter><wait>"
 provisioners:
-- type: shell
-  inline:
-  - sudo add-apt-repository -y ppa:ansible/ansible
-  - sudo apt-get update
-  - sudo apt-get install -y ansible
 - type: ansible-local
   playbook_dir: linux_playbooks
-  playbook_file: linux_playbooks/vanilla.yml
+  playbook_file: linux_playbooks/vanilla_centos.yml
 - type: shell
   inline:
-  - "sudo apt list --installed > /tmp/apt_packages"
+  - "yum list installed > /tmp/yum_packages"
 - type: file
   direction: download
-  source: /tmp/apt_packages
-  destination: "{{ user `records_path` }}/apt_packages"
+  source: /tmp/yum_packages
+  destination: "{{ user `records_path` }}/yum_packages"
 post-processors:
 - type: shell-local
   environment_vars:

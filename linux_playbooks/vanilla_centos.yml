@@ -1,11 +1,12 @@
 ---
 - hosts: localhost
   roles:
-  - apt
-  - vmware
+  - yum
   - ssh
   - users
   - logging
   - cleanup
   vars_files:
   - secrets.yml
+  vars:
+    sftp_server_path: /usr/libexec/openssh/sftp-server
